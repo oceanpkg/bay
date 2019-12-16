@@ -1,4 +1,4 @@
-//! A content-addressable data store for Ocean.
+//! The content-addressable data store for Ocean.
 //!
 //! This project is a work in progress. If you want to help make this a reality,
 //! contact [Nikolai Vazquez].

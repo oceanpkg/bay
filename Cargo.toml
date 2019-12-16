@@ -2,7 +2,7 @@
 name = "bay"
 version = "0.0.0"
 authors = ["The Ocean Project Developers"]
-description = "[WIP] A content-addressable data store for Ocean."
+description = "[WIP] The content-addressable data store for Ocean."
 license = "AGPL-3.0-only"
 homepage = "https://github.com/oceanpkg/bay"
 repository = "https://github.com/oceanpkg/bay"
