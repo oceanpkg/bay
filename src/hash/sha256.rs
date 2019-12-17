@@ -1,0 +1,303 @@
+//! The [SHA-256] hashing algorithm.
+//!
+//! [SHA-256]: https://en.wikipedia.org/wiki/SHA-2
+
+use std::{
+    cmp,
+    convert::{TryFrom, TryInto},
+    error,
+    fmt,
+    io,
+    str,
+};
+use sha2::digest::{Input, FixedOutput};
+
+/// The byte array type.
+pub type Bytes = [u8; Sha256::SIZE];
+
+/// The buffer type for writing the hex representation.
+pub type HexBuf = [u8; Sha256::HEX_SIZE];
+
+/// A [SHA-256] hash.
+///
+/// [SHA-256]: https://en.wikipedia.org/wiki/SHA-2
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// Exposing the entire inner byte array is fine since any 256-bit value is a
+// SHA-256 hash.
+pub struct Sha256(pub Bytes);
+
+impl fmt::Debug for Sha256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        struct HexByte(u8);
+
+        impl fmt::Debug for HexByte {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                fmt::LowerHex::fmt(&self.0, f)
+            }
+        }
+
+        let inner = unsafe {
+            &*(&self.0 as *const _ as *const [HexByte; Sha256::SIZE])
+        };
+        f.debug_tuple("Sha256")
+            .field(inner)
+            .finish()
+    }
+}
+
+impl Default for Sha256 {
+    #[inline]
+    fn default() -> Self {
+        sha2::Sha256::default().into()
+    }
+}
+
+impl From<sha2::Sha256> for Sha256 {
+    #[inline]
+    fn from(s: sha2::Sha256) -> Self {
+        Self(s.fixed_result().into())
+    }
+}
+
+impl TryFrom<&str> for Sha256 {
+    type Error = ParseError;
+
+    #[inline]
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+}
+
+impl TryFrom<&[u8]> for Sha256 {
+    type Error = ParseError;
+
+    fn try_from(hash: &[u8]) -> Result<Self, Self::Error> {
+        use cmp::Ordering::*;
+
+        let required_len = Self::HEX_SIZE;
+        let hash_len = hash.len();
+
+        match hash_len.cmp(&required_len) {
+            Greater => Err(ParseError::TooLong {
+                excess_len: hash_len - required_len,
+            }),
+            Less => Err(ParseError::TooShort {
+                remaining_len: required_len - hash_len,
+            }),
+            Equal => {
+                let mut result = Sha256([0; Self::SIZE]);
+                let hash = unsafe {
+                    &*(hash as *const [u8] as *const HexBuf)
+                };
+                let get_nibble = |offset: usize| -> Result<u8, ParseError> {
+                    match hash[offset] | 32 {
+                        n @ b'a'..=b'z' => Ok(n - b'a' + 0xa),
+                        n @ b'0'..=b'9' => Ok(n - b'0'),
+                        _ => Err(ParseError::InvalidChar { offset })
+                    }
+                };
+                for s in 0..Self::SIZE {
+                    let i = s * 2;
+                    let j = i + 1;
+                    result.0[s] = (get_nibble(i)? << 4) | get_nibble(j)?;
+                }
+                Ok(result)
+            },
+        }
+    }
+}
+
+impl str::FromStr for Sha256 {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.as_bytes().try_into()
+    }
+}
+
+impl fmt::Display for Sha256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.with_hex(false, |hex| hex.fmt(f))
+    }
+}
+
+impl serde::Serialize for Sha256 {
+    fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer
+    {
+        self.with_hex(false, |hex| hex.serialize(ser))
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Sha256 {
+    fn deserialize<D>(de: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>
+    {
+        struct Visitor;
+
+        impl<'de> serde::de::Visitor<'de> for Visitor {
+            type Value = Sha256;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "a SHA-256 hash")
+            }
+
+            fn visit_str<E>(self, hash: &str) -> Result<Self::Value, E>
+                where E: serde::de::Error
+            {
+                hash.parse().map_err(E::custom)
+            }
+        }
+
+        de.deserialize_str(Visitor)
+    }
+}
+
+impl PartialEq<str> for Sha256 {
+    fn eq(&self, hash: &str) -> bool {
+        self.with_hex(false, |hex| {
+            hex.eq_ignore_ascii_case(hash)
+        })
+    }
+}
+
+impl PartialEq<Sha256> for str {
+    #[inline]
+    fn eq(&self, hash: &Sha256) -> bool {
+        hash == self
+    }
+}
+
+impl Sha256 {
+    /// The size of the hash in bytes.
+    pub const SIZE: usize = 32;
+
+    /// The size of the hash in bytes when represented as hexadecimal.
+    pub const HEX_SIZE: usize = Self::SIZE * 2;
+
+    /// Digests `data` as input and returns the computed hash.
+    pub fn hash_bytes<B: AsRef<[u8]>>(data: B) -> Self {
+        sha2::Sha256::default().chain(data).into()
+    }
+
+    /// Digests `reader` as input and returns the computed hash.
+    pub fn hash_reader<R: io::Read>(mut reader: R) -> io::Result<(Self, u64)> {
+        let mut sha256 = sha2::Sha256::default();
+        let bytes_read = io::copy(&mut reader, &mut sha256)?;
+        Ok((sha256.into(), bytes_read))
+    }
+
+    /// Writes the hexadecimal representation of `self` to `writer`.
+    #[inline]
+    pub fn write_hex<W: io::Write>(
+        &self,
+        uppercase: bool,
+        writer: &mut W,
+    ) -> io::Result<()> {
+        self.with_hex(uppercase, |hex| writer.write_all(hex.as_bytes()))
+    }
+
+    /// Writes the hexadecimal representation of `self` to `buf`, returning the
+    /// resulting UTF-8 string.
+    pub fn write_hex_buf<'b>(
+        &self,
+        uppercase: bool,
+        buf: &'b mut HexBuf,
+    ) -> &'b mut str {
+        let uppercase = if uppercase { b'A' } else { b'a'};
+        let hex_nibble = |n: u8| -> u8 {
+            if n < 0xa {
+                n + b'0'
+            } else {
+                n - 0xa + uppercase
+            }
+        };
+        for i in 0..Self::SIZE {
+            let byte = self.0[i];
+            let h1 = hex_nibble(byte >> 4);
+            let h2 = hex_nibble(byte & 0xf);
+
+            let i = i * 2;
+            buf[i] = h1;
+            buf[i + 1] = h2;
+        }
+        // SAFETY: The above loop writes the string representation of all bytes
+        // to `buf`. This operation overwrites all bytes in `buf`.
+        unsafe { str::from_utf8_unchecked_mut(buf) }
+    }
+
+    /// Calls `f` with a temporary stack-allocated hexadecimal string
+    /// representation of `self`.
+    #[inline]
+    pub fn with_hex<F, T>(&self, uppercase: bool, f: F) -> T
+        where F: for<'a> FnOnce(&'a mut str) -> T
+    {
+        f(self.write_hex_buf(uppercase, &mut [0; Sha256::HEX_SIZE]))
+    }
+}
+
+///
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ParseError {
+    /// An invalid character was found.
+    InvalidChar {
+        /// The offset from 0 where the invalid character was found.
+        offset: usize,
+    },
+    /// The input string was too short.
+    TooShort {
+        /// The number of bytes that need to be appended in order to be the
+        /// correct size.
+        remaining_len: usize,
+    },
+    /// The input string was too long.
+    TooLong {
+        /// The number of bytes that need to be removed in order to be the
+        /// correct size.
+        excess_len: usize,
+    },
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ParseError::InvalidChar { offset } => write!(
+                f,
+                "SHA-256 hash has an invalid character at byte offset {}",
+                offset,
+            ),
+            ParseError::TooShort { remaining_len } => write!(
+                f,
+                "SHA-256 hash too short by {} characters",
+                remaining_len,
+            ),
+            ParseError::TooLong { excess_len } => write!(
+                f,
+                "SHA-256 hash too long by {} characters",
+                excess_len,
+            ),
+        }
+    }
+}
+
+impl error::Error for ParseError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Simple sanity check to make sure it actually works.
+    #[test]
+    fn hash_name() {
+        let name = "Nikolai Vazquez";
+        let hash = "aee72bc3a1e741a4544832c0d99fa40b\
+                    e0e2f3377b2f444c8b7de2597732463f";
+
+        for &hash in [hash, &hash.to_uppercase()].iter() {
+            let sha = Sha256::hash_bytes(name);
+            assert_eq!(sha, *hash);
+            assert_eq!(Sha256::try_from(hash), Ok(sha));
+        }
+    }
+}

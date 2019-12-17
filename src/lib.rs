@@ -23,3 +23,5 @@
 //! [`CONTRIBUTING.md`]: https://github.com/oceanpkg/bay/blob/master/CONTRIBUTING.md
 
 #![deny(missing_docs)]
+
+pub mod hash;

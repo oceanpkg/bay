@@ -8,3 +8,7 @@ homepage = "https://github.com/oceanpkg/bay"
 repository = "https://github.com/oceanpkg/bay"
 documentation = "https://docs.rs/bay"
 edition = "2018"
+
+[dependencies]
+sha2 = "0.8"
+serde = { version = "1", features = ["derive"] }
