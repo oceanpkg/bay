@@ -176,6 +176,14 @@ impl Sha256 {
     /// The size of the hash in bytes when represented as hexadecimal.
     pub const HEX_SIZE: usize = Self::SIZE * 2;
 
+    /// Attempts to parse `hash` as a SHA-256 hash.
+    #[inline]
+    pub fn parse<H>(hash: H) -> Result<Self, ParseError>
+        where H: TryInto<Self, Error = ParseError>
+    {
+        hash.try_into()
+    }
+
     /// Digests `data` as input and returns the computed hash.
     pub fn hash_bytes<B: AsRef<[u8]>>(data: B) -> Self {
         sha2::Sha256::default().chain(data).into()
@@ -237,7 +245,7 @@ impl Sha256 {
     }
 }
 
-///
+/// Indicates [`Sha256::parse`](struct.Sha256.html#method.parse) failed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ParseError {
     /// An invalid character was found.
