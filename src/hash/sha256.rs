@@ -294,10 +294,11 @@ mod tests {
         let hash = "aee72bc3a1e741a4544832c0d99fa40b\
                     e0e2f3377b2f444c8b7de2597732463f";
 
+        let sha = Sha256::hash_bytes(name);
+
         for &hash in [hash, &hash.to_uppercase()].iter() {
-            let sha = Sha256::hash_bytes(name);
             assert_eq!(sha, *hash);
-            assert_eq!(Sha256::try_from(hash), Ok(sha));
+            assert_eq!(Sha256::try_from(hash).as_ref(), Ok(&sha));
         }
     }
 }
