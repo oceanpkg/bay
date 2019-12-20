@@ -29,8 +29,9 @@ impl fmt::Debug for Chunk {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Chunks can be *very* large, so it doesn't make sense to print out the
         // entire buffer.
-        f.debug_tuple("Chunk")
-            .field(&self.0.as_ptr())
+        f.debug_struct("Chunk")
+            .field("ptr", &self.0.as_ptr())
+            .field("len", &self.len())
             .finish()
     }
 }
