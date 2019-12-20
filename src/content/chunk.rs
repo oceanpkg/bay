@@ -69,7 +69,9 @@ impl Chunk {
     }
 }
 
-/// A `Chunk` backed by a memory-mapped file.
+/// A [`Chunk`] backed by a memory-mapped file.
+///
+/// [`Chunk`]: struct.Chunk.html
 #[derive(Debug)]
 pub struct MappedChunk(Mmap);
 
