@@ -24,4 +24,5 @@
 
 #![deny(missing_docs)]
 
+pub mod content;
 pub mod hash;
