@@ -10,5 +10,6 @@ documentation = "https://docs.rs/bay"
 edition = "2018"
 
 [dependencies]
-sha2 = "0.8"
+memmap = "0.7"
 serde = { version = "1", features = ["derive"] }
+sha2 = "0.8"
