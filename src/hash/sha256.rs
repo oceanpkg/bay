@@ -387,4 +387,39 @@ mod benches {
         with_hex_max_100,  MAX, 100;
         with_hex_max_1000, MAX, 1000;
     }
+
+    #[inline(never)]
+    fn black_box_eq_hex(hash: &Sha256, hex: &[u8]) {
+        test::black_box(hash.eq_hex(hex));
+    }
+
+    macro_rules! gen_eq_hex {
+        ($($name:ident, $hash:expr, $iter:expr;)+) => {
+            $(
+                #[bench]
+                fn $name(b: &mut test::Bencher) {
+                    let hash = test::black_box($hash);
+                    let hex  = test::black_box(hash.to_string());
+                    b.iter(|| {
+                        for _ in 0..$iter {
+                            black_box_eq_hex(
+                                &hash,
+                                test::black_box(hex.as_bytes()),
+                            );
+                        }
+                    });
+                }
+            )+
+        };
+    }
+
+    gen_eq_hex! {
+        eq_hex_seq_10,   SEQ, 10;
+        eq_hex_seq_100,  SEQ, 100;
+        eq_hex_seq_1000, SEQ, 1000;
+
+        eq_hex_max_10,   MAX, 10;
+        eq_hex_max_100,  MAX, 100;
+        eq_hex_max_1000, MAX, 1000;
+    }
 }
