@@ -187,6 +187,12 @@ impl Sha256 {
     /// The size of the hash in bytes when represented as hexadecimal.
     pub const HEX_SIZE: usize = Self::SIZE * 2;
 
+    /// The minimum possible hash.
+    pub const MIN: Self = Self([0; Self::SIZE]);
+
+    /// The maximum possible hash.
+    pub const MAX: Self = Self([u8::max_value(); Self::SIZE]);
+
     /// Attempts to parse `hash` as a SHA-256 hash.
     #[inline]
     pub fn parse<H>(hash: H) -> Result<Self, ParseError>
@@ -376,8 +382,6 @@ mod benches {
         24, 25, 26, 27, 28, 29, 30, 31,
     ]);
 
-    const MAX: Sha256 = Sha256([255; 32]);
-
     #[inline(never)]
     fn black_box_with_hex(hash: &Sha256) {
         hash.with_hex(false, |hex| {
@@ -406,9 +410,9 @@ mod benches {
         with_hex_seq_100,  SEQ, 100;
         with_hex_seq_1000, SEQ, 1000;
 
-        with_hex_max_10,   MAX, 10;
-        with_hex_max_100,  MAX, 100;
-        with_hex_max_1000, MAX, 1000;
+        with_hex_max_10,   Sha256::MAX, 10;
+        with_hex_max_100,  Sha256::MAX, 100;
+        with_hex_max_1000, Sha256::MAX, 1000;
     }
 
     #[inline(never)]
@@ -441,8 +445,8 @@ mod benches {
         eq_hex_seq_100,  SEQ, 100;
         eq_hex_seq_1000, SEQ, 1000;
 
-        eq_hex_max_10,   MAX, 10;
-        eq_hex_max_100,  MAX, 100;
-        eq_hex_max_1000, MAX, 1000;
+        eq_hex_max_10,   Sha256::MAX, 10;
+        eq_hex_max_100,  Sha256::MAX, 100;
+        eq_hex_max_1000, Sha256::MAX, 1000;
     }
 }
