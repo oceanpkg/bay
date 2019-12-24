@@ -13,7 +13,7 @@ use memmap::Mmap;
 ///
 /// This represents either all or one of multiple parts of a single unit of
 /// content-addressable data.
-#[derive(serde::Serialize)]
+#[derive(PartialEq, Eq, serde::Serialize)]
 pub struct Chunk([u8]);
 
 // TODO: Implement `serde::Deserialize` for `&Chunk`
