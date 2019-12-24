@@ -169,9 +169,7 @@ impl<'de> serde::Deserialize<'de> for Sha256 {
 
 impl PartialEq<str> for Sha256 {
     fn eq(&self, hash: &str) -> bool {
-        self.with_hex(false, |hex| {
-            hex.eq_ignore_ascii_case(hash)
-        })
+        self.eq_hex(hash)
     }
 }
 
@@ -207,6 +205,26 @@ impl Sha256 {
         let mut sha256 = sha2::Sha256::default();
         let bytes_read = io::copy(&mut reader, &mut sha256)?;
         Ok((sha256.into(), bytes_read))
+    }
+
+    /// Returns whether the hexadecimal (base 16) representation of `self` is
+    /// equal to `hash`.
+    ///
+    /// This comparison is case-insensitive.
+    pub fn eq_hex<H: AsRef<[u8]>>(&self, hash: H) -> bool {
+        // Monomorphization after cheap size check.
+        fn eq(sha256: &Sha256, hash: &HexBuf) -> bool {
+            sha256.with_hex(false, |hex| {
+                hash.eq_ignore_ascii_case(hex.as_bytes())
+            })
+        }
+
+        let hash = hash.as_ref();
+        if hash.len() == Self::HEX_SIZE {
+            eq(self, unsafe { &*(hash.as_ptr() as *const HexBuf) })
+        } else {
+            false
+        }
     }
 
     /// Writes the hexadecimal representation of `self` to `writer`.
