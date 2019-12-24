@@ -3,6 +3,9 @@ matrix:
   include:
     - rust: 1.40.0
     - rust: stable
+    - rust: nightly
+      script:
+        - cargo bench
 cache:
   directories:
   - $HOME/.cargo
