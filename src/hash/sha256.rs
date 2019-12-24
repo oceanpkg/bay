@@ -310,3 +310,50 @@ mod tests {
         }
     }
 }
+
+#[cfg(all(test, has_features))]
+mod benches {
+    use super::*;
+
+    const SEQ: Sha256 = Sha256([
+        00, 01, 02, 03, 04, 05, 06, 07,
+        08, 09, 10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 28, 29, 30, 31,
+    ]);
+
+    const MAX: Sha256 = Sha256([255; 32]);
+
+    #[inline(never)]
+    fn black_box_hex(hash: &Sha256) {
+        hash.with_hex(false, |hex| {
+            test::black_box(hex);
+        });
+    }
+
+    macro_rules! gen {
+        ($($name:ident, $hash:expr, $iter:expr;)+) => {
+            $(
+                #[bench]
+                fn $name(b: &mut test::Bencher) {
+                    let hash = test::black_box($hash);
+                    b.iter(|| {
+                        for _ in 0..$iter {
+                            black_box_hex(test::black_box(&hash));
+                        }
+                    });
+                }
+            )+
+        };
+    }
+
+    gen! {
+        with_hex_seq_10,   SEQ, 10;
+        with_hex_seq_100,  SEQ, 100;
+        with_hex_seq_1000, SEQ, 1000;
+
+        with_hex_max_10,   MAX, 10;
+        with_hex_max_100,  MAX, 100;
+        with_hex_max_1000, MAX, 1000;
+    }
+}
