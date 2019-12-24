@@ -168,6 +168,7 @@ impl<'de> serde::Deserialize<'de> for Sha256 {
 }
 
 impl PartialEq<str> for Sha256 {
+    #[inline]
     fn eq(&self, hash: &str) -> bool {
         self.eq_hex(hash)
     }
