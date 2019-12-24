@@ -261,7 +261,7 @@ impl Sha256 {
     pub fn write_hex<W: io::Write>(
         &self,
         uppercase: bool,
-        writer: &mut W,
+        mut writer: W,
     ) -> io::Result<()> {
         self.with_hex(uppercase, |hex| writer.write_all(hex.as_bytes()))
     }
