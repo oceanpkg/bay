@@ -22,7 +22,11 @@
 //! [Nikolai Vazquez]: https://twitter.com/NikolaiVazquez
 //! [`CONTRIBUTING.md`]: https://github.com/oceanpkg/bay/blob/master/CONTRIBUTING.md
 
+#![cfg_attr(all(test, has_features), feature(test))]
 #![deny(missing_docs)]
+
+#[cfg(all(test, has_features))]
+extern crate test;
 
 pub mod content;
 pub mod hash;
