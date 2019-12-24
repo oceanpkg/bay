@@ -116,8 +116,21 @@ impl str::FromStr for Sha256 {
 }
 
 impl fmt::Display for Sha256 {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.with_hex(false, |hex| hex.fmt(f))
+        fmt::LowerHex::fmt(self, f)
+    }
+}
+
+impl fmt::LowerHex for Sha256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.with_hex(false, |hex| fmt::Display::fmt(hex, f))
+    }
+}
+
+impl fmt::UpperHex for Sha256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.with_hex(true, |hex| fmt::Display::fmt(hex, f))
     }
 }
 
