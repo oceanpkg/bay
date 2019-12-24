@@ -9,6 +9,10 @@ repository = "https://github.com/oceanpkg/bay"
 documentation = "https://docs.rs/bay"
 edition = "2018"
 
+[build-dependencies]
+cargo-emit = "0.1"
+version_check = "0.9"
+
 [dependencies]
 memmap = "0.7"
 serde = { version = "1", features = ["derive"] }
