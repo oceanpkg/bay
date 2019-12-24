@@ -338,13 +338,13 @@ mod benches {
     const MAX: Sha256 = Sha256([255; 32]);
 
     #[inline(never)]
-    fn black_box_hex(hash: &Sha256) {
+    fn black_box_with_hex(hash: &Sha256) {
         hash.with_hex(false, |hex| {
             test::black_box(hex);
         });
     }
 
-    macro_rules! gen {
+    macro_rules! gen_with_hex {
         ($($name:ident, $hash:expr, $iter:expr;)+) => {
             $(
                 #[bench]
@@ -352,7 +352,7 @@ mod benches {
                     let hash = test::black_box($hash);
                     b.iter(|| {
                         for _ in 0..$iter {
-                            black_box_hex(test::black_box(&hash));
+                            black_box_with_hex(test::black_box(&hash));
                         }
                     });
                 }
@@ -360,7 +360,7 @@ mod benches {
         };
     }
 
-    gen! {
+    gen_with_hex! {
         with_hex_seq_10,   SEQ, 10;
         with_hex_seq_100,  SEQ, 100;
         with_hex_seq_1000, SEQ, 1000;
