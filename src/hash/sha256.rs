@@ -213,10 +213,33 @@ impl Sha256 {
     /// This comparison is case-insensitive.
     pub fn eq_hex<H: AsRef<[u8]>>(&self, hash: H) -> bool {
         // Monomorphization after cheap size check.
+        //
+        // This also ensures that no bounds checks are done on `hash` since its
+        // size is known at compile-time.
         fn eq(sha256: &Sha256, hash: &HexBuf) -> bool {
-            sha256.with_hex(false, |hex| {
-                hash.eq_ignore_ascii_case(hex.as_bytes())
-            })
+            let hex_nibble = |n: u8| -> u8 {
+                if n < 0xa {
+                    n + b'0'
+                } else {
+                    n - 0xa + b'a'
+                }
+            };
+
+            for i in 0..Sha256::SIZE {
+                let byte = sha256.0[i];
+                let h1 = hex_nibble(byte >> 4);
+                let h2 = hex_nibble(byte & 0xf);
+
+                let i = i * 2;
+                let ne1 = (hash[i]     | 32) ^ h1;
+                let ne2 = (hash[i + 1] | 32) ^ h2;
+
+                if ne1 | ne2 != 0 {
+                    return false;
+                }
+            }
+
+            true
         }
 
         let hash = hash.as_ref();
