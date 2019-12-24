@@ -370,6 +370,15 @@ mod tests {
             assert_eq!(Sha256::try_from(hash).as_ref(), Ok(&sha));
         }
     }
+
+    #[test]
+    fn eq_hex() {
+        for sha in [Sha256::MIN, Sha256::MAX].iter() {
+            for &uppercase in [false, true].iter() {
+                sha.with_hex(uppercase, |hex| assert_eq!(sha, hex));
+            }
+        }
+    }
 }
 
 #[cfg(all(test, has_features))]
