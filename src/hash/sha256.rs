@@ -26,25 +26,6 @@ pub type HexBuf = [u8; Sha256::HEX_SIZE];
 // SHA-256 hash.
 pub struct Sha256(pub Bytes);
 
-impl fmt::Debug for Sha256 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        struct HexByte(u8);
-
-        impl fmt::Debug for HexByte {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                fmt::LowerHex::fmt(&self.0, f)
-            }
-        }
-
-        let inner = unsafe {
-            &*(&self.0 as *const _ as *const [HexByte; Sha256::SIZE])
-        };
-        f.debug_tuple("Sha256")
-            .field(inner)
-            .finish()
-    }
-}
-
 impl Default for Sha256 {
     #[inline]
     fn default() -> Self {
@@ -112,6 +93,25 @@ impl str::FromStr for Sha256 {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         s.as_bytes().try_into()
+    }
+}
+
+impl fmt::Debug for Sha256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        struct HexByte(u8);
+
+        impl fmt::Debug for HexByte {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                fmt::LowerHex::fmt(&self.0, f)
+            }
+        }
+
+        let inner = unsafe {
+            &*(&self.0 as *const _ as *const [HexByte; Sha256::SIZE])
+        };
+        f.debug_tuple("Sha256")
+            .field(inner)
+            .finish()
     }
 }
 
