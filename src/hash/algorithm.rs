@@ -49,7 +49,7 @@ impl HashAlgorithm {
         }
     }
 
-    /// Returns the number of bytes needed to store `self`.
+    /// Returns the number of bytes needed to store the digest of `self`.
     #[inline]
     pub fn len(&self) -> usize {
         match self {
