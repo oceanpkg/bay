@@ -1,4 +1,23 @@
-# Bay
+<div align="center">
+  <a href="https://www.oceanpkg.org">
+    <!-- TODO: Make logo specific to Bay instead of reusing Ocean's -->
+    <img src="https://www.oceanpkg.org/static/images/ocean-logo.svg"
+         alt="Ocean logo"
+         height="120" width="120">
+  </a>
+  <br>
+  <h1>Bay</h1>
+  <a href="https://travis-ci.com/oceanpkg/bay">
+    <img src="https://travis-ci.com/oceanpkg/bay.svg?branch=master"
+         alt="Travis CI badge">
+  </a>
+  <a href="https://crates.io/crates/bay">
+    <img src="https://img.shields.io/crates/v/bay.svg"
+         alt="Crates.io badge">
+  </a>
+  <img src="https://tokei.rs/b1/github/oceanpkg/bay" alt="Lines of code">
+</div>
+<br>
 
 The content-addressable data store for [Ocean].
 
