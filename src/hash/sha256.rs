@@ -98,19 +98,9 @@ impl str::FromStr for Sha256 {
 
 impl fmt::Debug for Sha256 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        struct HexByte(u8);
-
-        impl fmt::Debug for HexByte {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                fmt::LowerHex::fmt(&self.0, f)
-            }
-        }
-
-        let inner = unsafe {
-            &*(&self.0 as *const _ as *const [HexByte; Sha256::SIZE])
-        };
+        let inner = super::util::HexByte::slice(&self.0);
         f.debug_tuple("Sha256")
-            .field(inner)
+            .field(&inner)
             .finish()
     }
 }

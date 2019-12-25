@@ -1,5 +1,7 @@
 //! Hashing algorithms.
 
+mod util;
+
 pub mod sha256;
 
 #[doc(inline)]
