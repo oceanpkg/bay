@@ -53,7 +53,7 @@ impl HashAlgorithm {
     #[inline]
     pub fn len(&self) -> usize {
         match self {
-            HashAlgorithm::Sha256 => 64,
+            HashAlgorithm::Sha256 => 32,
         }
     }
 }
