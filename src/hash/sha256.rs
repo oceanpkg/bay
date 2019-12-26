@@ -193,7 +193,7 @@ impl Sha256 {
     }
 
     /// Digests `data` as input and returns the computed hash.
-    pub fn hash_bytes<B: AsRef<[u8]>>(data: B) -> Self {
+    pub fn hash<B: AsRef<[u8]>>(data: B) -> Self {
         sha2::Sha256::default().chain(data).into()
     }
 
@@ -353,7 +353,7 @@ mod tests {
         let hash = "aee72bc3a1e741a4544832c0d99fa40b\
                     e0e2f3377b2f444c8b7de2597732463f";
 
-        let sha = Sha256::hash_bytes(name);
+        let sha = Sha256::hash(name);
 
         for &hash in [hash, &hash.to_uppercase()].iter() {
             assert_eq!(sha, *hash);
