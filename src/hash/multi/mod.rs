@@ -5,6 +5,7 @@ use std::{
     cmp,
     fmt,
     mem,
+    num::NonZeroUsize,
     ops,
     ptr,
     slice,
@@ -46,6 +47,18 @@ mod offset {
     /// The capacity offset when `MultiHashBuf` is represented by a `Vec<u8>`.
     pub const CAPACITY: usize = PAYLOAD + size::PTR;
 }
+
+mod range {
+    use super::*;
+
+    pub const DIGEST_LEN: ops::Range<usize>
+        = offset::DIGEST_LEN..(offset::DIGEST_LEN + size::DIGEST_LEN);
+}
+
+mod decode;
+
+#[doc(inline)]
+pub use self::decode::*;
 
 /// A self-describing, forward-compatible hash format that supports multiple
 /// algorithms.
@@ -158,13 +171,31 @@ impl Ord for MultiHash {
 
 impl MultiHash {
     /// Creates a new instance or returns an error if `hash` is invalid.
-    pub fn from_slice(hash: &[u8]) -> Result<&Self, ()> {
-        unimplemented!("TODO: Parse hash at {:p}", hash.as_ptr())
+    #[inline]
+    pub fn new(hash: &[u8]) -> Result<&Self, DecodeError> {
+        let digest_len_bytes = hash.get(range::DIGEST_LEN)
+            .ok_or(DecodeError::MissingDigestLen)?;
+
+        let digest_len_bytes = unsafe {
+            *digest_len_bytes.as_ptr().cast::<[u8; size::DIGEST_LEN]>()
+        };
+        let digest_len = u16::from_le_bytes(digest_len_bytes) as usize;
+
+        let expected_len = offset::PAYLOAD + digest_len;
+
+        // SAFETY: `digest_len` can only be retrieved if `hash.len() > 0`.
+        let received_len = unsafe { NonZeroUsize::new_unchecked(hash.len()) };
+
+        if received_len.get() == expected_len {
+            Ok(unsafe { Self::new_unchecked(hash) })
+        } else {
+            Err(DecodeError::LenMismatch { expected_len, received_len })
+        }
     }
 
     /// Creates a new instance assuming `hash` to be valid.
     #[inline]
-    pub unsafe fn from_slice_unchecked(hash: &[u8]) -> &Self {
+    pub unsafe fn new_unchecked(hash: &[u8]) -> &Self {
         Self::from_ptr(hash.as_ptr())
     }
 
@@ -172,6 +203,79 @@ impl MultiHash {
     #[inline]
     pub unsafe fn from_ptr<'a>(ptr: *const u8) -> &'a Self {
         &*ptr.cast()
+    }
+
+    /// Returns an iterator that decodes contiguous `MultiHash`es from `hashes`.
+    ///
+    /// # Examples
+    ///
+    /// Because each iteration returns a `Result`, the iterator can be
+    /// [`collect`]ed into a `Result` corresponding to the first invalid hash.
+    ///
+    /// ```
+    /// use bay::hash::MultiHash;
+    ///
+    /// let bytes: &[u8] = // ...
+    /// # &[255, 0, 0, 255, 1, 0, 0, 255, 2, 0, 0, 0];
+    ///
+    /// let hashes: Vec<&MultiHash> = MultiHash::iter(bytes)
+    ///     .collect::<Result<_, _>>()
+    ///     .unwrap();
+    ///
+    /// // Serialize `hashes` into a contiguous buffer.
+    /// let hash_bytes: Vec<u8> = hashes.into_iter()
+    ///     .map(|h| h.as_bytes().iter().cloned())
+    ///     .flatten()
+    ///     .collect();
+    ///
+    /// assert_eq!(hash_bytes, bytes);
+    /// ```
+    ///
+    /// [`collect`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.collect
+    #[inline]
+    pub const fn iter(hashes: &[u8]) -> DecodeIter<'_> {
+        DecodeIter { hashes }
+    }
+
+    /// Returns an iterator that decodes contiguous `MultiHash`es from `hashes`
+    /// by blindly trusting reported lengths.
+    ///
+    /// # Safety
+    ///
+    /// <span style="color:red;">**The returned iterator is _extremely_ unsafe.
+    /// Use at your own risk!**</span>
+    ///
+    /// This assumes that `hashes` is a contiguous (back-to-back) list of
+    /// `MultiHash`es that all report a valid digest length.
+    ///
+    /// # Examples
+    ///
+    /// Unlike with [`iter`](#method.iter), no errors are reported and thus the
+    /// hashes can be [`collect`]ed without going through a `Result`.
+    ///
+    /// ```
+    /// use bay::hash::MultiHash;
+    ///
+    /// let bytes: &[u8] = // ...
+    /// # &[255, 0, 0, 255, 1, 0, 0, 255, 2, 0, 0, 0];
+    ///
+    /// let hashes: Vec<&MultiHash> = unsafe {
+    ///     MultiHash::iter_unchecked(bytes).collect()
+    /// };
+    ///
+    /// // Serialize `hashes` into a contiguous buffer.
+    /// let hash_bytes: Vec<u8> = hashes.into_iter()
+    ///     .map(|h| h.as_bytes().iter().cloned())
+    ///     .flatten()
+    ///     .collect();
+    ///
+    /// assert_eq!(hash_bytes, bytes);
+    /// ```
+    ///
+    /// [`collect`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.collect
+    #[inline]
+    pub const unsafe fn iter_unchecked(hashes: &[u8]) -> DecodeUncheckedIter<'_> {
+        DecodeUncheckedIter { hashes }
     }
 
     #[inline]
@@ -403,13 +507,17 @@ impl MultiHashBuf {
     }
 
     /// Creates a new instance or returns an error if `hash` is invalid.
-    pub fn from_vec(hash: Vec<u8>) -> Result<Self, ()> {
-        unimplemented!("TODO: Parse hash at {:p}", hash.as_ptr())
+    #[inline]
+    pub fn new(hash: Vec<u8>) -> Result<Self, DecodeBufError> {
+        match MultiHash::new(&hash) {
+            Ok(_) => Ok(unsafe { Self::new_unchecked(hash) }),
+            Err(cause) => Err(DecodeBufError { cause, hash }),
+        }
     }
 
     /// Creates a new instance assuming `hash` to be valid.
     #[inline]
-    pub unsafe fn from_vec_unchecked(hash: Vec<u8>) -> Self {
+    pub unsafe fn new_unchecked(hash: Vec<u8>) -> Self {
         let digest_len = hash.len() - offset::PAYLOAD;
         if digest_len <= size::INLINE_DIGEST {
             Self::new_inline(hash.as_slice())
@@ -556,12 +664,26 @@ mod test {
             *ptr = (digest_len as u16).to_le_bytes();
         }
 
-        let hash = unsafe { MultiHashBuf::from_vec_unchecked(hash) };
+        let hash = unsafe { MultiHashBuf::new_unchecked(hash) };
 
         for _ in 0..10 {
             drop(hash.clone());
         }
 
         drop(hash);
+    }
+
+    #[test]
+    fn decode() {
+        let mut hash = vec![255, 0, 0];
+
+        for i in 1..=255 {
+            // Reassign digest length low byte as digest increases.
+            hash[1] = i;
+            hash.push(i);
+
+            let hash = hash.as_slice();
+            assert_eq!(MultiHash::new(hash).unwrap().as_bytes(), hash);
+        }
     }
 }
