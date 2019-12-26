@@ -27,7 +27,7 @@ macro_rules! decl {
                 #[allow(dead_code, non_snake_case)]
                 union SizeCalculator {
                     // Use byte buffers directly since they always implement
-                    // `Clone`, unlike `$alg`.
+                    // `Copy`, unlike `$alg`.
                     $($alg: [u8; mem::size_of::<super::$alg>()],)+
                 }
                 mem::size_of::<SizeCalculator>()
