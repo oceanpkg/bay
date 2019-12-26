@@ -12,6 +12,7 @@ use std::{
 };
 use super::{
     HashAlgorithm,
+    Sha256,
     util::HexByte,
 };
 
@@ -369,6 +370,31 @@ impl From<&MultiHash> for MultiHashBuf {
     #[inline]
     fn from(hash: &MultiHash) -> Self {
         hash.to_owned()
+    }
+}
+
+impl From<Sha256> for MultiHashBuf {
+    #[inline]
+    fn from(digest: Sha256) -> Self {
+        const DIGEST_LEN: usize = mem::size_of::<Sha256>();
+        const REM_BYTES: usize = size::INLINE_DIGEST - DIGEST_LEN;
+
+        #[repr(C)] // Required to ensure correct field ordering.
+        struct Hash {
+            algorithm: HashAlgorithm,
+            digest_len: [u8; 2],
+            digest: Sha256,
+            remaining: [u8; REM_BYTES],
+        }
+
+        let hash = Hash {
+            algorithm: HashAlgorithm::Sha256,
+            digest_len: [DIGEST_LEN as u8, 0],
+            digest,
+            remaining: [0u8; REM_BYTES],
+        };
+
+        unsafe { mem::transmute(hash) }
     }
 }
 
