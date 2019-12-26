@@ -21,6 +21,18 @@ macro_rules! decl {
         }
 
         impl HashAlgorithm {
+            /// The current maximum size known.
+            pub(crate) const MAX_SIZE: usize = {
+                // A union's size is equal to that of its largest field.
+                #[allow(dead_code, non_snake_case)]
+                union SizeCalculator {
+                    // Use byte buffers directly since they always implement
+                    // `Clone`, unlike `$alg`.
+                    $($alg: [u8; mem::size_of::<super::$alg>()],)+
+                }
+                mem::size_of::<SizeCalculator>()
+            };
+
             #[inline]
             pub(crate) fn is_valid(tag: u8) -> bool {
                 match tag {
@@ -28,7 +40,6 @@ macro_rules! decl {
                     _ => false,
                 }
             }
-
         }
     };
 }
@@ -39,10 +50,6 @@ decl! {
 }
 
 impl HashAlgorithm {
-    /// The current maximum size known.
-    // TODO: Compute by actually getting the largest hash in `decl!`.
-    pub(crate) const MAX_SIZE: usize = mem::size_of::<super::Sha256>();
-
     /// Creates a new instance from `tag` if it represents a known algorithm.
     #[inline]
     pub fn from_tag(tag: u8) -> Option<Self> {
