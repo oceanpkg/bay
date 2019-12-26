@@ -1,4 +1,8 @@
-use std::mem;
+use std::{
+    mem,
+    io,
+};
+use super::MultiHashBuf;
 
 macro_rules! decl {
     ($(
@@ -54,6 +58,26 @@ impl HashAlgorithm {
     pub fn len(&self) -> usize {
         match self {
             HashAlgorithm::Sha256 => 32,
+        }
+    }
+
+    /// Takes `bytes` as input and returns the computed hash.
+    pub fn hash<B: AsRef<[u8]>>(&self, bytes: B) -> MultiHashBuf {
+        match self {
+            Self::Sha256 => super::Sha256::hash(bytes).into(),
+        }
+    }
+
+    /// Takes `reader` as input and returns the computed hash.
+    pub fn hash_reader<R: io::Read>(
+        &self,
+        reader: R,
+    ) -> io::Result<(MultiHashBuf, u64)> {
+        match self {
+            Self::Sha256 => {
+                let (digest, count) = super::Sha256::hash_reader(reader)?;
+                Ok((digest.into(), count))
+            },
         }
     }
 }
