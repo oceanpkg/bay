@@ -296,6 +296,17 @@ impl MultiHash {
         offset::PAYLOAD + self.digest_len()
     }
 
+    /// Returns whether the length of the digest of `self` is valid in terms of
+    /// [`algorithm`](#method.algorithm).
+    ///
+    /// For forward-compatibility reasons, this is not automatically checked
+    /// when decoding with [`new`](#method.new) or [`iter`](#method.iter).
+    #[inline]
+    pub fn is_valid_len(&self) -> Option<bool> {
+        self.algorithm()
+            .map(|alg| self.digest_len() == alg.len())
+    }
+
     #[inline]
     fn algorithm_tag(&self) -> u8 {
         unsafe { *self.as_bytes().get_unchecked(offset::ALGORITHM) }
@@ -603,6 +614,20 @@ impl MultiHashBuf {
     #[inline]
     pub fn len(&self) -> usize {
         offset::PAYLOAD + self.digest_len()
+    }
+
+    /// Returns whether the length of the digest of `self` is valid in terms of
+    /// [`algorithm`](#method.algorithm).
+    ///
+    /// For forward-compatibility reasons, this is not automatically checked
+    /// when decoding with [`new`](#method.new).
+    // This exists so that---in the case of a non-inline hash---the algorithm
+    // and digest length are *always* read from inline data for better cache
+    // locality.
+    #[inline]
+    pub fn is_valid_len(&self) -> Option<bool> {
+        self.algorithm()
+            .map(|alg| self.digest_len() == alg.len())
     }
 
     #[inline]
