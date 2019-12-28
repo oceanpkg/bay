@@ -30,3 +30,6 @@ extern crate test;
 
 pub mod content;
 pub mod hash;
+
+#[doc(inline)]
+pub use self::hash::{Hash, HashBuf};

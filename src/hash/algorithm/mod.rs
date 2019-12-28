@@ -4,7 +4,7 @@ use std::{
     mem,
     io,
 };
-use super::MultiHashBuf;
+use super::HashBuf;
 
 pub mod sha256;
 
@@ -76,7 +76,7 @@ impl Algorithm {
     }
 
     /// Takes `bytes` as input and returns the computed hash.
-    pub fn hash<B: AsRef<[u8]>>(&self, bytes: B) -> MultiHashBuf {
+    pub fn hash<B: AsRef<[u8]>>(&self, bytes: B) -> HashBuf {
         match self {
             Self::Sha256 => Sha256::hash(bytes).into(),
         }
@@ -86,7 +86,7 @@ impl Algorithm {
     pub fn hash_reader<R: io::Read>(
         &self,
         reader: R,
-    ) -> io::Result<(MultiHashBuf, u64)> {
+    ) -> io::Result<(HashBuf, u64)> {
         match self {
             Self::Sha256 => {
                 let (digest, count) = Sha256::hash_reader(reader)?;

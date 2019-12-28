@@ -4,11 +4,11 @@ use std::{
     iter,
     num::NonZeroUsize,
 };
-use super::{MultiHash, offset, range};
+use super::{Hash, offset, range};
 
-/// The error returned when decoding bytes into a [`MultiHash`] fails.
+/// The error returned when decoding bytes into a [`Hash`] fails.
 ///
-/// [`MultiHash`]: struct.MultiHash.html
+/// [`Hash`]: struct.Hash.html
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DecodeError {
     /// The provided bytes are too few to read the length.
@@ -42,16 +42,16 @@ impl fmt::Display for DecodeError {
 
 impl Error for DecodeError {}
 
-/// The error returned when decoding bytes into a [`MultiHashBuf`] fails.
+/// The error returned when decoding bytes into a [`HashBuf`] fails.
 ///
-/// [`MultiHashBuf`]: struct.MultiHashBuf.html
+/// [`HashBuf`]: struct.HashBuf.html
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecodeBufError {
     /// The reason that `hash` is invalid.
     pub cause: DecodeError,
-    /// The hash that could not represent a valid [`MultiHash`].
+    /// The hash that could not represent a valid [`Hash`].
     ///
-    /// [`MultiHash`]: struct.MultiHash.html
+    /// [`Hash`]: struct.Hash.html
     pub hash: Vec<u8>,
 }
 
@@ -69,19 +69,19 @@ impl Error for DecodeBufError {
     }
 }
 
-/// An iterator over contiguous [`MultiHash`]es in a slice of bytes.
+/// An iterator over contiguous [`Hash`]es in a slice of bytes.
 ///
-/// See [`MultiHash::iter`] for more info.
+/// See [`Hash::iter`] for more info.
 ///
-/// [`MultiHash`]:       struct.MultiHash.html
-/// [`MultiHash::iter`]: struct.MultiHash.html#method.iter
+/// [`Hash`]:       struct.Hash.html
+/// [`Hash::iter`]: struct.Hash.html#method.iter
 #[derive(Clone)]
 pub struct DecodeIter<'a> {
     pub(crate) hashes: &'a [u8],
 }
 
 impl<'a> Iterator for DecodeIter<'a> {
-    type Item = Result<&'a MultiHash, DecodeError>;
+    type Item = Result<&'a Hash, DecodeError>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -103,7 +103,7 @@ impl<'a> Iterator for DecodeIter<'a> {
         match self.hashes.get(..expected_len) {
             Some(hash) => {
                 self.hashes = &self.hashes[expected_len..];
-                Some(Ok(unsafe { MultiHash::new_unchecked(hash) }))
+                Some(Ok(unsafe { Hash::new_unchecked(hash) }))
             },
             None => {
                 // Make next iteration be `None` to prevent an infinite loop.
@@ -119,27 +119,27 @@ impl<'a> Iterator for DecodeIter<'a> {
 
 impl iter::FusedIterator for DecodeIter<'_> {}
 
-/// An iterator over contiguous [`MultiHash`]es in a slice of bytes that doesn't
+/// An iterator over contiguous [`Hash`]es in a slice of bytes that doesn't
 /// perform any safety checks.
 ///
-/// See [`MultiHash::iter_unchecked`] for more info.
+/// See [`Hash::iter_unchecked`] for more info.
 ///
-/// [`MultiHash`]:                 struct.MultiHash.html
-/// [`MultiHash::iter_unchecked`]: struct.MultiHash.html#method.iter_unchecked
+/// [`Hash`]:                 struct.Hash.html
+/// [`Hash::iter_unchecked`]: struct.Hash.html#method.iter_unchecked
 #[derive(Clone)]
 pub struct DecodeUncheckedIter<'a> {
     pub(crate) hashes: &'a [u8],
 }
 
 impl<'a> Iterator for DecodeUncheckedIter<'a> {
-    type Item = &'a MultiHash;
+    type Item = &'a Hash;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.hashes.is_empty() {
             return None;
         }
         unsafe {
-            let hash = MultiHash::new_unchecked(self.hashes);
+            let hash = Hash::new_unchecked(self.hashes);
             self.hashes = self.hashes.get_unchecked(hash.len()..);
             Some(hash)
         }
