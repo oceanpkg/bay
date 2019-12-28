@@ -1,8 +1,15 @@
+//! Known hashing algorithms.
+
 use std::{
     mem,
     io,
 };
 use super::MultiHashBuf;
+
+pub mod sha256;
+
+#[doc(inline)]
+pub use self::sha256::Sha256;
 
 macro_rules! decl {
     ($(
@@ -28,7 +35,7 @@ macro_rules! decl {
                 union SizeCalculator {
                     // Use byte buffers directly since they always implement
                     // `Copy`, unlike `$alg`.
-                    $($alg: [u8; mem::size_of::<super::$alg>()],)+
+                    $($alg: [u8; mem::size_of::<$alg>()],)+
                 }
                 mem::size_of::<SizeCalculator>()
             };
@@ -71,7 +78,7 @@ impl HashAlgorithm {
     /// Takes `bytes` as input and returns the computed hash.
     pub fn hash<B: AsRef<[u8]>>(&self, bytes: B) -> MultiHashBuf {
         match self {
-            Self::Sha256 => super::Sha256::hash(bytes).into(),
+            Self::Sha256 => Sha256::hash(bytes).into(),
         }
     }
 
@@ -82,7 +89,7 @@ impl HashAlgorithm {
     ) -> io::Result<(MultiHashBuf, u64)> {
         match self {
             Self::Sha256 => {
-                let (digest, count) = super::Sha256::hash_reader(reader)?;
+                let (digest, count) = Sha256::hash_reader(reader)?;
                 Ok((digest.into(), count))
             },
         }

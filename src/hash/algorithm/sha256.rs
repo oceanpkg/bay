@@ -11,6 +11,7 @@ use std::{
     str,
 };
 use sha2::digest::{Input, FixedOutput};
+use crate::hash::util::HexByte;
 
 /// The byte array type.
 pub type Bytes = [u8; Sha256::SIZE];
@@ -98,9 +99,8 @@ impl str::FromStr for Sha256 {
 
 impl fmt::Debug for Sha256 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let inner = super::util::HexByte::slice(&self.0);
         f.debug_tuple("Sha256")
-            .field(&inner)
+            .field(&HexByte::slice(&self.0))
             .finish()
     }
 }

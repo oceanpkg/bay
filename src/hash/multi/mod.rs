@@ -11,8 +11,7 @@ use std::{
     slice,
 };
 use super::{
-    HashAlgorithm,
-    Sha256,
+    algorithm::{HashAlgorithm, Sha256},
     util::HexByte,
 };
 
