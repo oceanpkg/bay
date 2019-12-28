@@ -11,7 +11,7 @@ use std::{
     slice,
 };
 use super::{
-    algorithm::{HashAlgorithm, Sha256},
+    algorithm::{Algorithm, Sha256},
     util::HexByte,
 };
 
@@ -24,7 +24,7 @@ mod size {
 
     /// The maximum length allowed for storing the digest in `MultiHashBuf`'s
     /// bit pattern directly.
-    pub const INLINE_DIGEST: usize = HashAlgorithm::MAX_SIZE;
+    pub const INLINE_DIGEST: usize = Algorithm::MAX_SIZE;
 
     pub const INLINE_HASH: usize = offset::PAYLOAD + INLINE_DIGEST;
 }
@@ -313,8 +313,8 @@ impl MultiHash {
 
     /// Returns the hashing algorithm used.
     #[inline]
-    pub fn algorithm(&self) -> Option<HashAlgorithm> {
-        HashAlgorithm::from_tag(self.algorithm_tag())
+    pub fn algorithm(&self) -> Option<Algorithm> {
+        Algorithm::from_tag(self.algorithm_tag())
     }
 
     /// Returns the bytes of the digest for the hashing algorithm used.
@@ -391,14 +391,14 @@ impl From<Sha256> for MultiHashBuf {
 
         #[repr(C)] // Required to ensure correct field ordering.
         struct Hash {
-            algorithm: HashAlgorithm,
+            algorithm: Algorithm,
             digest_len: [u8; 2],
             digest: Sha256,
             remaining: [u8; REM_BYTES],
         }
 
         let hash = Hash {
-            algorithm: HashAlgorithm::Sha256,
+            algorithm: Algorithm::Sha256,
             digest_len: [DIGEST_LEN as u8, 0],
             digest,
             remaining: [0u8; REM_BYTES],
@@ -636,8 +636,8 @@ impl MultiHashBuf {
 
     /// Returns the hashing algorithm used.
     #[inline]
-    pub fn algorithm(&self) -> Option<HashAlgorithm> {
-        HashAlgorithm::from_tag(self.algorithm_tag())
+    pub fn algorithm(&self) -> Option<Algorithm> {
+        Algorithm::from_tag(self.algorithm_tag())
     }
 
     /// Returns the bytes of the hashing algorithm.

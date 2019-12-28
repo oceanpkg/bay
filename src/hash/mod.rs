@@ -7,6 +7,6 @@ pub mod multi;
 
 #[doc(inline)]
 pub use self::{
-    algorithm::HashAlgorithm,
+    algorithm::Algorithm,
     multi::{MultiHash, MultiHashBuf},
 };

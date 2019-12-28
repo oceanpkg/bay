@@ -20,14 +20,14 @@ macro_rules! decl {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
         #[repr(u8)]
         #[non_exhaustive]
-        pub enum HashAlgorithm {
+        pub enum Algorithm {
             $(
                 $(#[$meta])*
                 $alg = $tag,
             )+
         }
 
-        impl HashAlgorithm {
+        impl Algorithm {
             /// The current maximum size known.
             pub(crate) const MAX_SIZE: usize = {
                 // A union's size is equal to that of its largest field.
@@ -56,7 +56,7 @@ decl! {
     Sha256 = 0,
 }
 
-impl HashAlgorithm {
+impl Algorithm {
     /// Creates a new instance from `tag` if it represents a known algorithm.
     #[inline]
     pub fn from_tag(tag: u8) -> Option<Self> {
@@ -71,7 +71,7 @@ impl HashAlgorithm {
     #[inline]
     pub fn len(&self) -> usize {
         match self {
-            HashAlgorithm::Sha256 => 32,
+            Algorithm::Sha256 => 32,
         }
     }
 
