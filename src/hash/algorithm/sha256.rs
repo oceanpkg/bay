@@ -259,6 +259,12 @@ impl Sha256 {
     {
         f(self.write_hex_buf(uppercase, &mut [0; Sha256::HEX_SIZE]))
     }
+
+    /// Returns the bytes of the hash.
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
 }
 
 /// Indicates [`Sha256::parse`](struct.Sha256.html#method.parse) failed.
