@@ -17,6 +17,8 @@ mod size {
     /// pattern directly.
     pub const INLINE_DIGEST: usize = Algorithm::MAX_SIZE;
 
+    pub const PAYLOAD: usize = INLINE_HASH;
+
     pub const INLINE_HASH: usize = offset::PAYLOAD + INLINE_DIGEST;
 }
 
@@ -601,8 +603,8 @@ impl HashBuf {
     }
 
     #[inline]
-    fn payload(&self) -> &[u8] {
-        &self.0[offset::PAYLOAD..]
+    fn payload(&self) -> &[u8; size::PAYLOAD] {
+        unsafe { &*self.0[offset::PAYLOAD..].as_ptr().cast() }
     }
 
     // SAFETY: `self` *must* be backed by a vector representation and the caller
