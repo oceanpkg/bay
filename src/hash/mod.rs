@@ -656,8 +656,9 @@ impl HashBuf {
         self.algorithm().map(|alg| self.digest_len() == alg.len())
     }
 
+    /// Returns the tag byte for the hashing algorithm used.
     #[inline]
-    const fn algorithm_tag(&self) -> u8 {
+    pub const fn algorithm_tag(&self) -> u8 {
         self.0[offset::ALGORITHM]
     }
 
