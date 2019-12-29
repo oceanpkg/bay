@@ -217,8 +217,11 @@ impl Sha256 {
         &self,
         uppercase: bool,
         mut writer: W,
-    ) -> io::Result<()> {
-        self.with_hex(uppercase, |hex| writer.write_all(hex.as_bytes()))
+    ) -> io::Result<u64> {
+        self.with_hex(uppercase, |hex| {
+            writer.write_all(hex.as_bytes())?;
+            Ok(hex.len() as u64)
+        })
     }
 
     /// Writes the hexadecimal representation of `self` to `buf`, returning the
