@@ -685,6 +685,9 @@ impl HashBuf {
 
     #[inline]
     fn digest_len_bytes(&self) -> [u8; size::DIGEST_LEN] {
+        // Loaded directly behind a pointer rather than via indexing in order to
+        // always just have one `movzx` on x86, rather than two `movzx` with
+        // their values ORed together.
         unsafe { *self.0.as_ptr().add(offset::DIGEST_LEN).cast() }
     }
 
