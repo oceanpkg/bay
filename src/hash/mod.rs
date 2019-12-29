@@ -217,8 +217,8 @@ impl Hash {
     ///
     /// # Examples
     ///
-    /// Because each iteration returns a `Result`, the iterator can be
-    /// [`collect`]ed into a `Result` corresponding to the first invalid hash.
+    /// Because each iteration returns a [`Result`], the iterator can be
+    /// [`collect`]ed into a [`Result`] corresponding to the first invalid hash.
     ///
     /// ```
     /// use bay::hash::Hash;
@@ -240,6 +240,7 @@ impl Hash {
     /// ```
     ///
     /// [`collect`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.collect
+    /// [`Result`]:  https://doc.rust-lang.org/std/result/enum.Result.html
     #[inline]
     pub const fn iter(hashes: &[u8]) -> DecodeIter<'_> {
         DecodeIter { hashes }
@@ -259,7 +260,7 @@ impl Hash {
     /// # Examples
     ///
     /// Unlike with [`iter`](#method.iter), no errors are reported and thus the
-    /// hashes can be [`collect`]ed without going through a `Result`.
+    /// hashes can be [`collect`]ed without going through a [`Result`].
     ///
     /// ```
     /// use bay::hash::Hash;
@@ -281,6 +282,7 @@ impl Hash {
     /// ```
     ///
     /// [`collect`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.collect
+    /// [`Result`]:  https://doc.rust-lang.org/std/result/enum.Result.html
     #[inline]
     pub const unsafe fn iter_unchecked(hashes: &[u8]) -> DecodeUncheckedIter<'_> {
         DecodeUncheckedIter { hashes }
