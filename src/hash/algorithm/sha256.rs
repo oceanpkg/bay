@@ -2,16 +2,13 @@
 //!
 //! [SHA-256]: https://en.wikipedia.org/wiki/SHA-2
 
+use crate::hash::util::HexByte;
+use sha2::digest::{FixedOutput, Input};
 use std::{
     cmp,
     convert::{TryFrom, TryInto},
-    error,
-    fmt,
-    io,
-    str,
+    error, fmt, io, str,
 };
-use sha2::digest::{Input, FixedOutput};
-use crate::hash::util::HexByte;
 
 /// The byte array type.
 pub type Bytes = [u8; Sha256::SIZE];
@@ -68,14 +65,12 @@ impl TryFrom<&[u8]> for Sha256 {
             }),
             Equal => {
                 let mut result = Sha256([0; Self::SIZE]);
-                let hash = unsafe {
-                    &*(hash as *const [u8] as *const HexBuf)
-                };
+                let hash = unsafe { &*(hash as *const [u8] as *const HexBuf) };
                 let get_nibble = |offset: usize| -> Result<u8, ParseError> {
                     match hash[offset] | 32 {
                         n @ b'a'..=b'z' => Ok(n - b'a' + 0xa),
                         n @ b'0'..=b'9' => Ok(n - b'0'),
-                        _ => Err(ParseError::InvalidChar { offset })
+                        _ => Err(ParseError::InvalidChar { offset }),
                     }
                 };
                 for s in 0..Self::SIZE {
@@ -84,7 +79,7 @@ impl TryFrom<&[u8]> for Sha256 {
                     result.0[s] = (get_nibble(i)? << 4) | get_nibble(j)?;
                 }
                 Ok(result)
-            },
+            }
         }
     }
 }
@@ -126,7 +121,8 @@ impl fmt::UpperHex for Sha256 {
 
 impl serde::Serialize for Sha256 {
     fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
-        where S: serde::Serializer
+    where
+        S: serde::Serializer,
     {
         self.with_hex(false, |hex| hex.serialize(ser))
     }
@@ -135,7 +131,7 @@ impl serde::Serialize for Sha256 {
 impl<'de> serde::Deserialize<'de> for Sha256 {
     fn deserialize<D>(de: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>
+        D: serde::Deserializer<'de>,
     {
         struct Visitor;
 
@@ -147,7 +143,8 @@ impl<'de> serde::Deserialize<'de> for Sha256 {
             }
 
             fn visit_str<E>(self, hash: &str) -> Result<Self::Value, E>
-                where E: serde::de::Error
+            where
+                E: serde::de::Error,
             {
                 hash.parse().map_err(E::custom)
             }
@@ -187,7 +184,8 @@ impl Sha256 {
     /// Attempts to parse `hash` as a SHA-256 hash.
     #[inline]
     pub fn parse<H>(hash: H) -> Result<Self, ParseError>
-        where H: TryInto<Self, Error = ParseError>
+    where
+        H: TryInto<Self, Error = ParseError>,
     {
         hash.try_into()
     }
@@ -228,7 +226,7 @@ impl Sha256 {
                 let h2 = hex_nibble(byte & 0xf);
 
                 let i = i * 2;
-                let ne1 = (hash[i]     | 32) ^ h1;
+                let ne1 = (hash[i] | 32) ^ h1;
                 let ne2 = (hash[i + 1] | 32) ^ h2;
 
                 if ne1 | ne2 != 0 {
@@ -264,7 +262,7 @@ impl Sha256 {
         uppercase: bool,
         buf: &'b mut HexBuf,
     ) -> &'b mut str {
-        let uppercase = if uppercase { b'A' } else { b'a'};
+        let uppercase = if uppercase { b'A' } else { b'a' };
         let hex_nibble = |n: u8| -> u8 {
             if n < 0xa {
                 n + b'0'
@@ -290,7 +288,8 @@ impl Sha256 {
     /// representation of `self`.
     #[inline]
     pub fn with_hex<F, T>(&self, uppercase: bool, f: F) -> T
-        where F: for<'a> FnOnce(&'a mut str) -> T
+    where
+        F: for<'a> FnOnce(&'a mut str) -> T,
     {
         f(self.write_hex_buf(uppercase, &mut [0; Sha256::HEX_SIZE]))
     }
@@ -319,6 +318,7 @@ pub enum ParseError {
 }
 
 impl fmt::Display for ParseError {
+    #[rustfmt::skip] // Keeps branch style consistent.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ParseError::InvalidChar { offset } => write!(
@@ -375,6 +375,7 @@ mod tests {
 mod benches {
     use super::*;
 
+    #[rustfmt::skip] // Easier to read this way.
     const SEQ: Sha256 = Sha256([
         00, 01, 02, 03, 04, 05, 06, 07,
         08, 09, 10, 11, 12, 13, 14, 15,

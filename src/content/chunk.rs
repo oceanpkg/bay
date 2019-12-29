@@ -1,13 +1,7 @@
 //! Content chunks.
 
-use std::{
-    fmt,
-    fs::File,
-    io,
-    ops,
-    path::Path,
-};
 use memmap::Mmap;
+use std::{fmt, fs::File, io, ops, path::Path};
 
 /// A content-addressable chunk of data.
 ///
@@ -93,9 +87,7 @@ impl MappedChunk {
     /// chunk is live.
     #[inline]
     pub unsafe fn open<P: AsRef<Path>>(path: P) -> io::Result<Self> {
-        File::open(path)
-            .and_then(|file| Mmap::map(&file))
-            .map(Self)
+        File::open(path).and_then(|file| Mmap::map(&file)).map(Self)
     }
 
     /// Returns the underlying bytes of the chunk.

@@ -1,10 +1,5 @@
-use std::{
-    error::Error,
-    fmt,
-    iter,
-    num::NonZeroUsize,
-};
-use super::{Hash, offset, range};
+use super::{offset, range, Hash};
+use std::{error::Error, fmt, iter, num::NonZeroUsize};
 
 /// The error returned when decoding bytes into a [`Hash`] fails.
 ///
@@ -24,6 +19,7 @@ pub enum DecodeError {
 }
 
 impl fmt::Display for DecodeError {
+    #[rustfmt::skip] // Keeps branch style consistent.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::MissingDigestLen => write!(
@@ -95,7 +91,7 @@ impl<'a> Iterator for DecodeIter<'a> {
                 // Make next iteration be `None` to prevent an infinite loop.
                 self.hashes = Default::default();
                 return Some(Err(DecodeError::MissingDigestLen));
-            },
+            }
         };
 
         let expected_len = offset::PAYLOAD + digest_len;
@@ -104,7 +100,7 @@ impl<'a> Iterator for DecodeIter<'a> {
             Some(hash) => {
                 self.hashes = &self.hashes[expected_len..];
                 Some(Ok(unsafe { Hash::new_unchecked(hash) }))
-            },
+            }
             None => {
                 // Make next iteration be `None` to prevent an infinite loop.
                 self.hashes = Default::default();
@@ -112,7 +108,7 @@ impl<'a> Iterator for DecodeIter<'a> {
                     expected_len,
                     received_len,
                 }))
-            },
+            }
         }
     }
 }

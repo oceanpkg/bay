@@ -1,10 +1,7 @@
 //! Known hashing algorithms.
 
-use std::{
-    mem,
-    io,
-};
 use super::HashBuf;
+use std::{io, mem};
 
 pub mod sha256;
 
@@ -91,7 +88,7 @@ impl Algorithm {
             Self::Sha256 => {
                 let (digest, count) = Sha256::hash_reader(reader)?;
                 Ok((digest.into(), count))
-            },
+            }
         }
     }
 }

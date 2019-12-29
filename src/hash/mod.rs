@@ -1,15 +1,6 @@
 //! Hashing algorithms.
 
-use std::{
-    borrow::Borrow,
-    cmp,
-    fmt,
-    mem,
-    num::NonZeroUsize,
-    ops,
-    ptr,
-    slice,
-};
+use std::{borrow::Borrow, cmp, fmt, mem, num::NonZeroUsize, ops, ptr, slice};
 
 pub mod algorithm;
 mod decode;
@@ -51,15 +42,12 @@ mod offset {
 mod range {
     use super::*;
 
-    pub const DIGEST_LEN: ops::Range<usize>
-        = offset::DIGEST_LEN..(offset::DIGEST_LEN + size::DIGEST_LEN);
+    pub const DIGEST_LEN: ops::Range<usize> =
+        offset::DIGEST_LEN..(offset::DIGEST_LEN + size::DIGEST_LEN);
 }
 
 #[doc(inline)]
-pub use self::{
-    algorithm::Algorithm,
-    decode::*,
-};
+pub use self::{algorithm::Algorithm, decode::*};
 
 /// A self-describing, forward-compatible hash format that supports multiple
 /// algorithms.
@@ -181,12 +169,12 @@ impl Hash {
     /// Creates a new instance or returns an error if `hash` is invalid.
     #[inline]
     pub fn new(hash: &[u8]) -> Result<&Self, DecodeError> {
-        let digest_len_bytes = hash.get(range::DIGEST_LEN)
+        let digest_len_bytes = hash
+            .get(range::DIGEST_LEN)
             .ok_or(DecodeError::MissingDigestLen)?;
 
-        let digest_len_bytes: [u8; size::DIGEST_LEN] = unsafe {
-            *digest_len_bytes.as_ptr().cast()
-        };
+        let digest_len_bytes: [u8; size::DIGEST_LEN] =
+            unsafe { *digest_len_bytes.as_ptr().cast() };
         let digest_len = u16::from_le_bytes(digest_len_bytes) as usize;
 
         let expected_len = offset::PAYLOAD + digest_len;
@@ -197,7 +185,10 @@ impl Hash {
         if received_len.get() == expected_len {
             Ok(unsafe { Self::new_unchecked(hash) })
         } else {
-            Err(DecodeError::LenMismatch { expected_len, received_len })
+            Err(DecodeError::LenMismatch {
+                expected_len,
+                received_len,
+            })
         }
     }
 
@@ -294,7 +285,9 @@ impl Hash {
     /// [`collect`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.collect
     /// [`Result`]:  https://doc.rust-lang.org/std/result/enum.Result.html
     #[inline]
-    pub const unsafe fn iter_unchecked(hashes: &[u8]) -> DecodeUncheckedIter<'_> {
+    pub const unsafe fn iter_unchecked(
+        hashes: &[u8],
+    ) -> DecodeUncheckedIter<'_> {
         DecodeUncheckedIter { hashes }
     }
 
@@ -322,8 +315,7 @@ impl Hash {
     /// when decoding with [`new`](#method.new) or [`iter`](#method.iter).
     #[inline]
     pub fn is_valid_len(&self) -> Option<bool> {
-        self.algorithm()
-            .map(|alg| self.digest_len() == alg.len())
+        self.algorithm().map(|alg| self.digest_len() == alg.len())
     }
 
     #[inline]
@@ -622,9 +614,8 @@ impl HashBuf {
     // The returned value is worthless garbage when `is_inline` is true.
     #[inline]
     fn vec_ptr(&self) -> *const u8 {
-        let ptr_bytes: [u8; size::PTR] = unsafe {
-            *self.0.as_ptr().add(offset::PAYLOAD).cast()
-        };
+        let ptr_bytes: [u8; size::PTR] =
+            unsafe { *self.0.as_ptr().add(offset::PAYLOAD).cast() };
         // The byte representation of a heap-allocated `HashBuf` will never be
         // sent between machines. As a result, we can use the host platform's
         // native word size and endianness.
@@ -657,8 +648,7 @@ impl HashBuf {
     // locality.
     #[inline]
     pub fn is_valid_len(&self) -> Option<bool> {
-        self.algorithm()
-            .map(|alg| self.digest_len() == alg.len())
+        self.algorithm().map(|alg| self.digest_len() == alg.len())
     }
 
     #[inline]
@@ -740,7 +730,8 @@ mod test {
 
         let digest_len = size::DIGEST_LEN + 1;
         unsafe {
-            let ptr = hash.as_mut_ptr()
+            let ptr = hash
+                .as_mut_ptr()
                 .add(offset::DIGEST_LEN)
                 .cast::<[u8; size::DIGEST_LEN]>();
             *ptr = (digest_len as u16).to_le_bytes();
