@@ -508,6 +508,10 @@ impl std::hash::Hash for HashBuf {
     }
 }
 
+// Note that some methods are the same as those found on `Hash` despite that
+// `HashBuf` implements `Deref<Target = Hash>`. These are marked as `DUPLICATE`
+// and exist primarily to avoid needless work, such as indirection in the case
+// of a non-inline `HashBuf`.
 impl HashBuf {
     // SAFETY: Some assumptions are made:
     // - `hash` is valid.
@@ -648,9 +652,9 @@ impl HashBuf {
     ///
     /// For forward-compatibility reasons, this is not automatically checked
     /// when decoding with [`new`](#method.new).
-    // This exists so that---in the case of a non-inline hash---the algorithm
-    // and digest length are *always* read from inline data for better cache
-    // locality.
+    // DUPLICATE: This exists so that---in the case of a non-inline hash---the
+    // algorithm and digest length are always read from inline data for better
+    // cache locality.
     #[inline]
     pub fn is_valid_len(&self) -> Option<bool> {
         self.algorithm().map(|alg| self.digest_len() == alg.len())
@@ -669,8 +673,8 @@ impl HashBuf {
     }
 
     /// Returns the bytes of the hashing algorithm.
-    // This exists so that---in the case of a non-inline hash---the digest
-    // length is *always* read from inline data for better cache locality.
+    // DUPLICATE: This exists so that---in the case of a non-inline hash---the
+    // digest length is always read from inline data for better cache locality.
     #[inline]
     pub fn digest(&self) -> &[u8] {
         unsafe {
@@ -685,7 +689,8 @@ impl HashBuf {
     }
 
     /// Returns the length of the digest.
-    // This exists for the same reason as `digest`.
+    // DUPLICATE: This exists so that the digest length is *always* read from
+    // inline data rather than for better cache locality.
     #[inline]
     pub fn digest_len(&self) -> usize {
         // Use consistent endianness on all platforms so that the bytes can be
@@ -711,6 +716,8 @@ impl HashBuf {
     }
 
     /// Returns the bytes of the hash.
+    // DUPLICATE: This exists so that---in the case of a non-inline hash---the
+    // digest length is always read from inline data for better cache locality.
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.as_ptr(), self.len()) }
