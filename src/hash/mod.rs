@@ -596,6 +596,11 @@ impl HashBuf {
         self.digest_len() <= size::INLINE_DIGEST
     }
 
+    #[inline]
+    fn payload(&self) -> &[u8] {
+        &self.0[offset::PAYLOAD..]
+    }
+
     // SAFETY: `self` *must* be backed by a vector representation and the caller
     // *must* take care to only `drop` either `self` or the returned vector.
     #[inline]
@@ -615,12 +620,11 @@ impl HashBuf {
     // The returned value is worthless garbage when `is_inline` is true.
     #[inline]
     fn vec_ptr(&self) -> *const u8 {
-        let ptr_bytes: [u8; size::PTR] =
-            unsafe { *self.0.as_ptr().add(offset::PAYLOAD).cast() };
+        let bytes = self.payload().as_ptr().cast::<[u8; size::PTR]>();
         // The byte representation of a heap-allocated `HashBuf` will never be
         // sent between machines. As a result, we can use the host platform's
         // native word size and endianness.
-        usize::from_ne_bytes(ptr_bytes) as *const u8
+        usize::from_ne_bytes(unsafe { *bytes }) as *const u8
     }
 
     /// Returns a pointer to the start of the hash.
