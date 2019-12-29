@@ -1,4 +1,4 @@
-use std::{fmt, io, mem, str, slice};
+use std::{fmt, io, mem, slice, str};
 
 #[repr(transparent)]
 pub struct LowerHexBytes<'a>(pub &'a [u8]);
