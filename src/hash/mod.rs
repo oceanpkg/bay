@@ -579,6 +579,11 @@ impl HashBuf {
     }
 
     /// Creates a new instance assuming `hash` to be valid.
+    ///
+    /// # Safety
+    ///
+    /// The bytes in `hash` _must_ must correctly match
+    /// [`Hash`'s memory layout](struct.Hash.html#layout).
     #[inline]
     pub unsafe fn new_unchecked(hash: Vec<u8>) -> Self {
         let digest_len = hash.len() - offset::PAYLOAD;
