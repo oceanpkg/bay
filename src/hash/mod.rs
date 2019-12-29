@@ -169,13 +169,14 @@ impl Hash {
     /// Creates a new instance or returns an error if `hash` is invalid.
     #[inline]
     pub fn new(hash: &[u8]) -> Result<&Self, DecodeError> {
-        let digest_len_bytes = hash
-            .get(range::DIGEST_LEN)
-            .ok_or(DecodeError::MissingDigestLen)?;
-
-        let digest_len_bytes: [u8; size::DIGEST_LEN] =
-            unsafe { *digest_len_bytes.as_ptr().cast() };
-        let digest_len = u16::from_le_bytes(digest_len_bytes) as usize;
+        let digest_len = {
+            let bytes = hash
+                .get(range::DIGEST_LEN)
+                .ok_or(DecodeError::MissingDigestLen)?
+                .as_ptr()
+                .cast::<[u8; size::DIGEST_LEN]>();
+            u16::from_le_bytes(unsafe { *bytes }) as usize
+        };
 
         let expected_len = offset::PAYLOAD + digest_len;
 
