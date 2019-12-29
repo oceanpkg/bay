@@ -1,18 +1,14 @@
 use std::fmt;
 
 #[repr(transparent)]
-pub struct HexByte(pub u8);
+pub struct LowerHexBytes<'a>(pub &'a [u8]);
 
-impl fmt::Debug for HexByte {
+impl fmt::Debug for LowerHexBytes<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::LowerHex::fmt(&self.0, f)
-    }
-}
-
-impl HexByte {
-    #[inline]
-    pub fn slice(bytes: &[u8]) -> &[HexByte] {
-        unsafe { &*(bytes as *const _ as *const _) }
+        for byte in self.0 {
+            fmt::LowerHex::fmt(byte, f)?;
+        }
+        Ok(())
     }
 }
 

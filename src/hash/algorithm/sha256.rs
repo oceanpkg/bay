@@ -2,7 +2,7 @@
 //!
 //! [SHA-256]: https://en.wikipedia.org/wiki/SHA-2
 
-use crate::hash::util::{self, HexByte};
+use crate::hash::util;
 use sha2::digest::{FixedOutput, Input};
 use std::{
     cmp,
@@ -95,7 +95,7 @@ impl str::FromStr for Sha256 {
 impl fmt::Debug for Sha256 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("Sha256")
-            .field(&HexByte::slice(&self.0))
+            .field(&util::LowerHexBytes(self.as_bytes()))
             .finish()
     }
 }

@@ -116,7 +116,7 @@ impl ToOwned for Hash {
 impl fmt::Debug for Hash {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("Hash")
-            .field(&util::HexByte::slice(self.as_bytes()))
+            .field(&util::LowerHexBytes(self.as_bytes()))
             .finish()
     }
 }
@@ -473,7 +473,7 @@ impl Borrow<Hash> for HashBuf {
 impl fmt::Debug for HashBuf {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("HashBuf")
-            .field(&util::HexByte::slice(self.as_bytes()))
+            .field(&util::LowerHexBytes(self.as_bytes()))
             .finish()
     }
 }
