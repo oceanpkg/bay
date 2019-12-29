@@ -170,6 +170,13 @@ impl Ord for Hash {
     }
 }
 
+impl std::hash::Hash for Hash {
+    #[inline]
+    fn hash<H: std::hash::Hasher>(&self, hasher: &mut H) {
+        hasher.write(self.as_bytes());
+    }
+}
+
 impl Hash {
     /// Creates a new instance or returns an error if `hash` is invalid.
     #[inline]
@@ -486,6 +493,13 @@ impl Ord for HashBuf {
     #[inline]
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.as_bytes().cmp(other.as_bytes())
+    }
+}
+
+impl std::hash::Hash for HashBuf {
+    #[inline]
+    fn hash<H: std::hash::Hasher>(&self, hasher: &mut H) {
+        hasher.write(self.as_bytes());
     }
 }
 
