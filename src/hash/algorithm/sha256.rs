@@ -2,7 +2,7 @@
 //!
 //! [SHA-256]: https://en.wikipedia.org/wiki/SHA-2
 
-use crate::hash::util::HexByte;
+use crate::hash::util::{self, HexByte};
 use sha2::digest::{FixedOutput, Input};
 use std::{
     cmp,
@@ -206,43 +206,9 @@ impl Sha256 {
     /// equal to `hash`.
     ///
     /// This comparison is case-insensitive.
+    #[inline]
     pub fn eq_hex<H: AsRef<[u8]>>(&self, hash: H) -> bool {
-        // Monomorphization after cheap size check.
-        //
-        // This also ensures that no bounds checks are done on `hash` since its
-        // size is known at compile-time.
-        fn eq(sha256: &Sha256, hash: &HexBuf) -> bool {
-            let hex_nibble = |n: u8| -> u8 {
-                if n < 0xa {
-                    n + b'0'
-                } else {
-                    n - 0xa + b'a'
-                }
-            };
-
-            for i in 0..Sha256::SIZE {
-                let byte = sha256.0[i];
-                let h1 = hex_nibble(byte >> 4);
-                let h2 = hex_nibble(byte & 0xf);
-
-                let i = i * 2;
-                let ne1 = h1 ^ (32 | hash[i]);
-                let ne2 = h2 ^ (32 | hash[i + 1]);
-
-                if ne1 | ne2 != 0 {
-                    return false;
-                }
-            }
-
-            true
-        }
-
-        let hash = hash.as_ref();
-        if hash.len() == Self::HEX_SIZE {
-            eq(self, unsafe { &*(hash.as_ptr() as *const HexBuf) })
-        } else {
-            false
-        }
+        util::eq_hex(&self.0, hash.as_ref())
     }
 
     /// Writes the hexadecimal representation of `self` to `writer`.
