@@ -1,6 +1,8 @@
 //! Hashing algorithms.
 
-use std::{borrow::Borrow, cmp, fmt, mem, num::NonZeroUsize, ops, ptr, slice};
+use std::{
+    borrow::Borrow, cmp, fmt, io, mem, num::NonZeroUsize, ops, ptr, slice,
+};
 
 pub mod algorithm;
 mod decode;
@@ -359,6 +361,38 @@ impl Hash {
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.as_ptr(), self.len()) }
+    }
+
+    /// Writes the hexadecimal representation of `self` to `writer`.
+    #[inline]
+    pub fn write_hex<W: io::Write>(
+        &self,
+        uppercase: bool,
+        mut writer: W,
+    ) -> io::Result<u64> {
+        util::write_hex(self.as_bytes(), uppercase, &mut writer)
+    }
+
+    /// Writes the hexadecimal representation of `self` to `buf`, returning the
+    /// written UTF-8 string.
+    #[inline]
+    pub fn write_hex_buf<'b>(
+        &self,
+        uppercase: bool,
+        buf: &'b mut Vec<u8>,
+    ) -> &'b mut str {
+        util::write_hex_buf(self.as_bytes(), uppercase, buf)
+    }
+
+    /// Writes the hexadecimal representation of `self` to `string`, returning
+    /// the written UTF-8 string.
+    #[inline]
+    pub fn write_hex_string<'b>(
+        &self,
+        uppercase: bool,
+        string: &'b mut String,
+    ) -> &'b mut str {
+        unsafe { self.write_hex_buf(uppercase, string.as_mut_vec()) }
     }
 }
 
@@ -739,6 +773,13 @@ impl HashBuf {
 mod test {
     use super::*;
 
+    fn dummy_hash() -> HashBuf {
+        let len = 255;
+        let mut hash = vec![255, len, 0];
+        hash.extend(1..=len);
+        HashBuf::new(hash).unwrap()
+    }
+
     #[test]
     fn clone() {
         let algorithm = 255u8;
@@ -775,6 +816,24 @@ mod test {
 
             let hash = hash.as_slice();
             assert_eq!(Hash::new(hash).unwrap().as_bytes(), hash);
+        }
+    }
+
+    #[test]
+    fn write_hex() {
+        let hash = dummy_hash();
+
+        for &uppercase in [false, true].iter() {
+            let mut buf1 = Vec::<u8>::new();
+            let mut buf2 = String::new();
+
+            hash.write_hex(uppercase, &mut buf1).unwrap();
+            let buf1 = String::from_utf8(buf1).unwrap();
+
+            let hex = hash.write_hex_string(uppercase, &mut buf2);
+
+            assert!(buf1.ends_with(&*hex));
+            assert_eq!(buf1, buf2);
         }
     }
 }
