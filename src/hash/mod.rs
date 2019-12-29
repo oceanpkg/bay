@@ -202,12 +202,22 @@ impl Hash {
     }
 
     /// Creates a new instance assuming `hash` to be valid.
+    ///
+    /// # Safety
+    ///
+    /// The bytes in `hash` _must_ must correctly match
+    /// [`Hash`'s memory layout](struct.Hash.html#layout).
     #[inline]
     pub unsafe fn new_unchecked(hash: &[u8]) -> &Self {
         Self::from_ptr(hash.as_ptr())
     }
 
     /// Creates a new instance assuming `ptr` to be the start of a valid hash.
+    ///
+    /// # Safety
+    ///
+    /// The bytes at `ptr` _must_ must correctly match
+    /// [`Hash`'s memory layout](struct.Hash.html#layout).
     #[inline]
     pub unsafe fn from_ptr<'a>(ptr: *const u8) -> &'a Self {
         &*ptr.cast()
