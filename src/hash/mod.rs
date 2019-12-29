@@ -184,8 +184,8 @@ impl Hash {
         let digest_len_bytes = hash.get(range::DIGEST_LEN)
             .ok_or(DecodeError::MissingDigestLen)?;
 
-        let digest_len_bytes = unsafe {
-            *digest_len_bytes.as_ptr().cast::<[u8; size::DIGEST_LEN]>()
+        let digest_len_bytes: [u8; size::DIGEST_LEN] = unsafe {
+            *digest_len_bytes.as_ptr().cast()
         };
         let digest_len = u16::from_le_bytes(digest_len_bytes) as usize;
 
@@ -622,8 +622,8 @@ impl HashBuf {
     // The returned value is worthless garbage when `is_inline` is true.
     #[inline]
     fn vec_ptr(&self) -> *const u8 {
-        let ptr_bytes = unsafe {
-            *self.0.as_ptr().add(offset::PAYLOAD).cast::<[u8; size::PTR]>()
+        let ptr_bytes: [u8; size::PTR] = unsafe {
+            *self.0.as_ptr().add(offset::PAYLOAD).cast()
         };
         // The byte representation of a heap-allocated `HashBuf` will never be
         // sent between machines. As a result, we can use the host platform's
@@ -723,7 +723,7 @@ impl HashBuf {
     /// Returns a shared reference to the hash that `self` has ownership of.
     #[inline]
     pub fn as_hash(&self) -> &Hash {
-        unsafe { &*self.as_ptr().cast::<Hash>() }
+        unsafe { &*self.as_ptr().cast() }
     }
 }
 
