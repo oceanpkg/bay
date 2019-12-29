@@ -226,8 +226,8 @@ impl Sha256 {
                 let h2 = hex_nibble(byte & 0xf);
 
                 let i = i * 2;
-                let ne1 = (hash[i] | 32) ^ h1;
-                let ne2 = (hash[i + 1] | 32) ^ h2;
+                let ne1 = h1 ^ (32 | hash[i]);
+                let ne2 = h2 ^ (32 | hash[i + 1]);
 
                 if ne1 | ne2 != 0 {
                     return false;
